@@ -11,7 +11,14 @@ from random import randint
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
+
 import json
+
+
+# Global Variables
+username = ''
+computer_name = "Computer"
+
 
 @ensure_csrf_cookie
 def hello_world(request):
@@ -23,12 +30,12 @@ def hello_world(request):
     else:
         return JsonResponse({'method': request.method})
 
-def print_instructions(request):
+def print_instructions():
     """
     Prints out instructions for the game.
     """
     intructions = "Hello and welcome to Simple21!\r\nThe object of the game it to get as close to 21 as you can, but DON'T go over!"
-    return HttpResponse(intructions)
+    return intructions
 
 def ask_yes_or_no(prompt):
     """
@@ -46,10 +53,8 @@ def ask_yes_or_no(prompt):
     for i in range(0, len(y_or_n)):
         if(y_or_n[i] == "y" or y_or_n[i] == "Y"):
             return True
-            break
         else:
             continue
-        return
 
 def next_card():
     """
@@ -59,13 +64,20 @@ def next_card():
     actual deck of cards, 10, Jack, Queen, and King all count as 10).
     """
 
-    #generate random number from 1 to 13 and reduce all numbers about 10 to 10
-    random_int = randint(1, 13)
-    if (random_int > 10):
-        random_int = 10
+    card_types = [2, 3, 4 , 5, 6, 7, 8, 9, 10, 'K', 'Q', 'J', 'A']
+
+    random_int = randint(0, 12)
+    card_value = card_types[random_int]
+    random_int = randint(0, 3)
+
+    card_suites = ['hearts','spades','diamonds','clubs']
+                   
+    card_suite = card_suites[random_int]
+
+
 
     #return the int btween 1 and 10
-    return random_int
+    return {'card_value': card_value, 'card_suite': card_suite}
 
 
 def take_another_card(computer_total_points, user_visible_card):
@@ -97,23 +109,29 @@ def is_game_over(is_user_passed, is_computer_passed):
     else:
         return False
 
-def print_status(is_user, name, hidden_card, visible_card, total_points):
-    """
-    In each turn, prints out the current status of the game.
-    If the given player (name) is the user, is_user will be set to True.  In this case, print out
-    the user's given name, his/her hidden card points, visible card points, and total points.
-    If the given player (name) is the computer, is_user will be set to False.  In this case, print out
-    the computer's given name, and his/her visible card points.
-    """
-    #print all users points
-    if(is_user == True):
-        print(name, "has:\r\n  ", hidden_card, "hidden point(s),\r\n  ",
-            visible_card, "visible point(s),\r\n  ",
-            total_points, "total point(s)")
+# def print_status(is_user, name, hidden_card, visible_card, total_points):
+#     """
+#     In each turn, prints out the current status of the game.
+#     If the given player (name) is the user, is_user will be set to True.  In this case, print out
+#     the user's given name, his/her hidden card points, visible card points, and total points.
+#     If the given player (name) is the computer, is_user will be set to False.  In this case, print out
+#     the computer's given name, and his/her visible card points.
+#     """
 
-    #print computers visible point(s)
-    if(is_user == False):
-        print(name, "has:\r\n   ", visible_card, "visible point(s)")
+#     text = ''
+#     #print all users points
+#     if(is_user == True):    
+#         text = (
+#             f"{name} has:\r\n   {hidden_card} hidden point(s),\r\n  {visible_card} "
+#             f"visible point(s),\r\n   {total_points} total point(s)"
+#         )
+
+#     #print computers visible point(s)
+#     if(is_user == False):
+#         text = f"{name} has:\r\n   {visible_card}  visible point(s)"
+
+#     return text
+    
 
 def print_winner(username, user_total_points, computer_name, computer_total_points):
     """
@@ -146,100 +164,135 @@ def print_winner(username, user_total_points, computer_name, computer_total_poin
     else:
         print("It's a tie")
 
-def run(username, computer_name):
+
+
+    
+
+def run():
     """
     This function controls the overall game and logic for the given user and computer.
     """
 
     #Over or not will be set to true when game is over
+    global over_or_not
     over_or_not = False
 
+    global user_visible_card_total_values
+    global user_hidden_card_value
+    global computer_visible_card_total_values
+    global computer_hidden_card_value
+    global is_computer_passed
+    global cards
+
+    is_computer_passed = False
+    user_visible_card_total_values = []
+    user_hidden_card_value = []
+    computer_visible_card_total_values = []
+    computer_hidden_card_value = []
+
     #determine and print starting point values for user
-    user_hidden_card_value = next_card()
-    user_visible_card_total_values = next_card()
-    print_status(True, username, user_hidden_card_value, user_visible_card_total_values,
-                 int(user_hidden_card_value + user_visible_card_total_values))
+    user_hidden_card_value = [next_card()]
+    user_visible_card_total_values = [next_card()]
+
+    cards['user_hidden_card_value'] = user_hidden_card_value
+    cards['user_visible_card_total_values'] = user_visible_card_total_values
+
+
+    # text.append(print_status(True, username, user_hidden_card_value, user_visible_card_total_values,
+    #              int(user_hidden_card_value + user_visible_card_total_values)))
 
     #determine and print starting visible points for computer
-    computer_hidden_card_value = next_card()
-    computer_visible_card_total_values = next_card()
-    print_status(False, computer_name, computer_hidden_card_value, computer_visible_card_total_values,
-                 int(computer_hidden_card_value + computer_visible_card_total_values))
+    computer_hidden_card_value = [next_card()]
+    computer_visible_card_total_values = [next_card()]
+
+    cards['computer_hidden_card_value'] = computer_hidden_card_value
+    cards['computer_visible_card_total_values'] = computer_visible_card_total_values
+
+    # text.append(print_status(False, computer_name, computer_hidden_card_value, computer_visible_card_total_values,
+    #              int(computer_hidden_card_value + computer_visible_card_total_values)))
+
+    return cards
 
     #is_user_passed will be set true when the user declines a new card
     is_user_passed = False
 
     #is_computer_passed will be set true when the computer declines a new card
-    is_computer_passed = False
 
     #This while loop will continue untill the game is over
-    while(over_or_not == False):
 
-        #if the user has not yet passed ask the user if they want to take a new card
-        if(is_user_passed == False):
-            is_taking_new_card = ask_yes_or_no("Take another card? (y/n)")
+cards = {}
 
-            #if the user take a new card determine the value, add it to the total and print the status
-            if(is_taking_new_card == True):
-                next_card_value = next_card()
-                user_visible_card_total_values += next_card_value
-                print(username, "get", next_card_value)
-                is_user_passed = False
-                print_status(True, username, user_hidden_card_value, user_visible_card_total_values,
-                             int(user_hidden_card_value + user_visible_card_total_values))
-
-            # if the user passes
-            else:
-                is_user_passed = True
-                print(username, "passed")
-
-        #if the computer has not yet passed determine if is takes a new card
-        if(is_computer_passed == False):
-            computer_takes_card = take_another_card(int(computer_visible_card_total_values +
-                        computer_hidden_card_value), user_visible_card_total_values)
-
-            #if the computer takes a new card
-            if(computer_takes_card == True):
-                next_card_value = next_card()
-                computer_visible_card_total_values += next_card_value
-                print(computer_name, "gets", next_card_value)
-                is_computer_passed = False
-                print_status(False, computer_name, computer_hidden_card_value, computer_visible_card_total_values,
-                             int(computer_hidden_card_value + computer_visible_card_total_values))
-
-            # if the computer passes
-            else:
-                is_computer_passed = True
-                print(computer_name, "passed")
-
-        #determine if the game is over
-        over_or_not = is_game_over(is_user_passed, is_computer_passed)
-
-    #print game over message and determine winner
-    print("----The Game is Over!----")
-    print_winner(username, int(user_hidden_card_value + user_visible_card_total_values), computer_name,
-                 int(computer_visible_card_total_values + computer_hidden_card_value))
-
-    #ask if the user wants to play again
-    wants_to_play_again = ask_yes_or_no("Play again? (y/n)")
-    if(wants_to_play_again == True):
-
-        #If the player wants to play again ask if they want to change the user name
-        changes_name = ask_yes_or_no("Change name? (y/n)")
-        if(changes_name == True):
-            username = input("New name?\r\n")
-
-        #run the game again!
-        run(username, computer_name)
+def play_turn():
 
 
-def set_user_name(request):
-    body = json.loads(request.body)
-    username = body["name"]
+    global user_visible_card_total_values
+    global user_hidden_card_value
+    global computer_visible_card_total_values
+    global computer_hidden_card_value
+    global is_computer_passed
+    global cards
+  
+    next_card_value = next_card()
+    # user_visible_card_total_values.append(next_card_value)
+
+    
+    # text.append(f"{username} gets {next_card_value}")
+    cards['user_visible_card_total_values'].append(next_card_value)
+
+    # text.append(print_status(True, username, user_hidden_card_value, user_visible_card_total_values,
+    #                 [*user_hidden_card_value, *user_visible_card_total_values]))
+
+    #if the computer has not yet passed determine if is takes a new card
+    if(is_computer_passed == False):
+        # computer_takes_card = take_another_card(int(computer_visible_card_total_values +
+        #             computer_hidden_card_value), user_visible_card_total_values)
+
+        computer_takes_card = True
+
+        #if the computer takes a new card
+        if(computer_takes_card == True):
+            next_card_value = next_card()
+            # computer_visible_card_total_values.append(next_card_value)
+            # text.append(f"{computer_name} gets {next_card_value}")
+            cards['computer_visible_card_total_values'].append(next_card_value)
+
+            is_computer_passed = False
+            # text.append(print_status(False, computer_name, computer_hidden_card_value, computer_visible_card_total_values,
+            #                 [*computer_hidden_card_value, *computer_visible_card_total_values]))
+
+        # if the computer passes
+        else:
+            is_computer_passed = True
+            # text.append(f"{computer_name} passed")
+
+    return cards
+
+    #     #determine if the game is over
+    #     over_or_not = is_game_over(is_user_passed, is_computer_passed)
+
+    # #print game over message and determine winner
+    # print("----The Game is Over!----")
+    # print_winner(username, int(user_hidden_card_value + user_visible_card_total_values), computer_name,
+    #              int(computer_visible_card_total_values + computer_hidden_card_value))
+
+    # #ask if the user wants to play again
+    # wants_to_play_again = ask_yes_or_no("Play again? (y/n)")
+    # if(wants_to_play_again == True):
+
+    #     #If the player wants to play again ask if they want to change the user name
+    #     changes_name = ask_yes_or_no("Change name? (y/n)")
+    #     if(changes_name == True):
+    #         username = input("New name?\r\n")
+
+    #     #run the game again!
+    #     run(username, computer_name)
+
+
+def set_user_name(name):
+    global username
+    username = name
     response = "Welcome " + username + "!"
-    return HttpResponse(response)
-
-
+    return response
 
 def main():
     """
