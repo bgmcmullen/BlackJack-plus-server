@@ -1,7 +1,7 @@
 import json
 from channels.generic.websocket import WebsocketConsumer
 
-from  simple21.game.main import print_instructions, set_user_name, run
+from  simple21.game.main import print_instructions, set_user_name, run, play_turn
 
 
 class GameConsumer(WebsocketConsumer):
@@ -17,16 +17,20 @@ class GameConsumer(WebsocketConsumer):
     switch = {
       "get_instructions": self.set_instructions,
       "set_name": self.handle_set_name,
-      "run": self.handle_run
+      "run": self.handle_run,
+      'take_a_card': self.take_a_card
     }
 
     handler = switch[type]
     handler(data['payload'])
 
+  def take_a_card(self, payload):
+    text = play_turn()
+    self.send_status(text)
 
   def handle_run(self, payload):
-    text = run()
-    self.send_status(text)
+    cards = run()
+    self.send_status(cards)
 
   def handle_set_name(self, name):
     response = set_user_name(name)
