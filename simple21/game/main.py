@@ -18,6 +18,9 @@ import json
 # Global Variables
 username = ''
 computer_name = "Computer"
+card_deck = []
+is_computer_passed = False
+cards = {}
 
 
 @ensure_csrf_cookie
@@ -36,6 +39,20 @@ def print_instructions():
     """
     intructions = "Hello and welcome to Simple21!\r\nThe object of the game it to get as close to 21 as you can, but DON'T go over!"
     return intructions
+
+def calculate_score(stack):
+    score = 0
+    num_of_As = 0
+    for card in stack:
+        if isinstance(card['card_value'], int):
+            score += card['card_value']
+        else:
+            score += 10
+        if card['card_value'] == 'A':
+            num_of_As += 1
+    if score > 21:
+        score -= num_of_As * 9
+    return score
 
 def ask_yes_or_no(prompt):
     """
@@ -64,23 +81,22 @@ def next_card():
     actual deck of cards, 10, Jack, Queen, and King all count as 10).
     """
 
-    card_types = [2, 3, 4 , 5, 6, 7, 8, 9, 10, 'K', 'Q', 'J', 'A']
+    global card_deck
 
-    random_int = randint(0, 12)
-    card_value = card_types[random_int]
-    random_int = randint(0, 3)
+    if(len(card_deck) == 0):
+        return None
 
-    card_suites = ['hearts','spades','diamonds','clubs']
-                   
-    card_suite = card_suites[random_int]
+    random_int = randint(0, len(card_deck) - 1)
+    
+    card = card_deck[random_int]
 
-
+    del card_deck[random_int]
 
     #return the int btween 1 and 10
-    return {'card_value': card_value, 'card_suite': card_suite}
+    return card
 
 
-def take_another_card(computer_total_points, user_visible_card):
+def take_another_card(computer_total_cards, user_visible_card):
     """
     Strategy for computer to take another card or not.  According to the computer’s own given
     total points (sum of visible cards + hidden card) and the user's sum of visible cards, you
@@ -91,7 +107,11 @@ def take_another_card(computer_total_points, user_visible_card):
 
     #The computer will take a new card is 15 of less or if it has 18 or less and
     #the computers total point(s) are less and four more the the users visible point(s)
-    if(computer_total_points < 15 or ((computer_total_points < (user_visible_card + 4)) and computer_total_points < 18)):
+
+    computer_total_points = calculate_score(computer_total_cards)
+    user_visible_points = calculate_score(user_visible_card)
+    
+    if(computer_total_points < 15 or (( computer_total_points < (user_visible_points + 4)) and computer_total_points < 18)):
         return True
     else:
         return False
@@ -141,32 +161,34 @@ def print_winner(username, user_total_points, computer_name, computer_total_poin
     - The player who won the game and the total number of points he/she won by, or if it's a tie, nobody won.
     """
 
+    user_score = calculate_score(user_total_points)
+    computer_score = calculate_score(computer_total_points)
 
-    print(username, "has",user_total_points, "and", computer_name, "has", computer_total_points)
+
+    text = [f"{username}, has {user_score} and {computer_name} has {computer_score}"]
+
 
         #If the user has more points(not over 21)
-    if(user_total_points > computer_total_points and user_total_points <= 21):
-        print(username, "won by", int(user_total_points - computer_total_points))
+    if(user_score  > computer_score and user_score  <= 21):
+        text.append(f"{username} won by {int(user_score - computer_score)}")
 
         #If the computer has more points(not over 21)
-    elif(computer_total_points > user_total_points and computer_total_points <= 21):
-        print(computer_name, "won by", int(computer_total_points - user_total_points))
+    elif(computer_score > user_score  and computer_score <= 21):
+        text.append(f"{computer_name} won by {int(computer_score - user_score)}")
 
         #If the computer overshot 21)
-    elif(computer_total_points > 21 and user_total_points <= 21):
-        print(username, "won by", int(computer_total_points - user_total_points))
+    elif(computer_score > 21 and user_score <= 21):
+        text.append(f"{username} won, {computer_name} went bust")
 
         #If the user overshot 21)
-    elif(user_total_points > 21 and computer_total_points <= 21):
-        print(computer_name, "won by ", int(user_total_points - computer_total_points))
+    elif(user_score  > 21 and computer_score <= 21):
+        text.append(f"{computer_name} won {username} went bust")
 
         #If the computer and user have the same number of point or both overshot 21
     else:
-        print("It's a tie")
+        text.append("It's a tie")
+    return text
 
-
-
-    
 
 def run():
     """
@@ -183,6 +205,23 @@ def run():
     global computer_hidden_card_value
     global is_computer_passed
     global cards
+    global card_deck
+
+    card_deck = [
+    {'card_value': 2, 'card_suite': 'hearts'}, {'card_value': 2, 'card_suite': 'diamonds'}, {'card_value': 2, 'card_suite': 'clubs'}, {'card_value': 2, 'card_suite': 'spades'},
+    {'card_value': 3, 'card_suite': 'hearts'}, {'card_value': 3, 'card_suite': 'diamonds'}, {'card_value': 3, 'card_suite': 'clubs'}, {'card_value': 3, 'card_suite': 'spades'},
+    {'card_value': 4, 'card_suite': 'hearts'}, {'card_value': 4, 'card_suite': 'diamonds'}, {'card_value': 4, 'card_suite': 'clubs'}, {'card_value': 4, 'card_suite': 'spades'},
+    {'card_value': 5, 'card_suite': 'hearts'}, {'card_value': 5, 'card_suite': 'diamonds'}, {'card_value': 5, 'card_suite': 'clubs'}, {'card_value': 5, 'card_suite': 'spades'},
+    {'card_value': 6, 'card_suite': 'hearts'}, {'card_value': 6, 'card_suite': 'diamonds'}, {'card_value': 6, 'card_suite': 'clubs'}, {'card_value': 6, 'card_suite': 'spades'},
+    {'card_value': 7, 'card_suite': 'hearts'}, {'card_value': 7, 'card_suite': 'diamonds'}, {'card_value': 7, 'card_suite': 'clubs'}, {'card_value': 7, 'card_suite': 'spades'},
+    {'card_value': 8, 'card_suite': 'hearts'}, {'card_value': 8, 'card_suite': 'diamonds'}, {'card_value': 8, 'card_suite': 'clubs'}, {'card_value': 8, 'card_suite': 'spades'},
+    {'card_value': 9, 'card_suite': 'hearts'}, {'card_value': 9, 'card_suite': 'diamonds'}, {'card_value': 9, 'card_suite': 'clubs'}, {'card_value': 9, 'card_suite': 'spades'},
+    {'card_value': 10, 'card_suite': 'hearts'}, {'card_value': 10, 'card_suite': 'diamonds'}, {'card_value': 10, 'card_suite': 'clubs'}, {'card_value': 10, 'card_suite': 'spades'},
+    {'card_value': 'J', 'card_suite': 'hearts'}, {'card_value': 'J', 'card_suite': 'diamonds'}, {'card_value': 'J', 'card_suite': 'clubs'}, {'card_value': 'J', 'card_suite': 'spades'},
+    {'card_value': 'Q', 'card_suite': 'hearts'}, {'card_value': 'Q', 'card_suite': 'diamonds'}, {'card_value': 'Q', 'card_suite': 'clubs'}, {'card_value': 'Q', 'card_suite': 'spades'},
+    {'card_value': 'K', 'card_suite': 'hearts'}, {'card_value': 'K', 'card_suite': 'diamonds'}, {'card_value': 'K', 'card_suite': 'clubs'}, {'card_value': 'K', 'card_suite': 'spades'},
+    {'card_value': 'A', 'card_suite': 'hearts'}, {'card_value': 'A', 'card_suite': 'diamonds'}, {'card_value': 'A', 'card_suite': 'clubs'}, {'card_value': 'A', 'card_suite': 'spades'}
+]
 
     is_computer_passed = False
     user_visible_card_total_values = []
@@ -213,22 +252,45 @@ def run():
 
     return cards
 
-    #is_user_passed will be set true when the user declines a new card
-    is_user_passed = False
 
     #is_computer_passed will be set true when the computer declines a new card
 
     #This while loop will continue untill the game is over
 
-cards = {}
+
+
+def computer_turn():
+
+    global computer_visible_card_total_values
+    global computer_hidden_card_value
+    global user_visible_card_total_values
+    global is_computer_passed
+
+    computer_takes_card = take_another_card([*computer_visible_card_total_values, *computer_hidden_card_value], user_visible_card_total_values)
+
+    #if the computer takes a new card
+    if(computer_takes_card == True):
+        next_card_value = next_card()
+        # computer_visible_card_total_values.append(next_card_value)
+        # text.append(f"{computer_name} gets {next_card_value}")
+        if next_card_value != None:
+            cards['computer_visible_card_total_values'].append(next_card_value)
+
+        is_computer_passed = False
+        # text.append(print_status(False, computer_name, computer_hidden_card_value, computer_visible_card_total_values,
+        #                 [*computer_hidden_card_value, *computer_visible_card_total_values]))
+
+    else:
+        is_computer_passed = True
+
+    # if the computer passes
+
 
 def play_turn():
 
 
     global user_visible_card_total_values
     global user_hidden_card_value
-    global computer_visible_card_total_values
-    global computer_hidden_card_value
     global is_computer_passed
     global cards
   
@@ -237,43 +299,35 @@ def play_turn():
 
     
     # text.append(f"{username} gets {next_card_value}")
-    cards['user_visible_card_total_values'].append(next_card_value)
+    if next_card_value != None:
+        cards['user_visible_card_total_values'].append(next_card_value)
 
     # text.append(print_status(True, username, user_hidden_card_value, user_visible_card_total_values,
     #                 [*user_hidden_card_value, *user_visible_card_total_values]))
 
     #if the computer has not yet passed determine if is takes a new card
     if(is_computer_passed == False):
-        # computer_takes_card = take_another_card(int(computer_visible_card_total_values +
-        #             computer_hidden_card_value), user_visible_card_total_values)
-
-        computer_takes_card = True
-
-        #if the computer takes a new card
-        if(computer_takes_card == True):
-            next_card_value = next_card()
-            # computer_visible_card_total_values.append(next_card_value)
-            # text.append(f"{computer_name} gets {next_card_value}")
-            cards['computer_visible_card_total_values'].append(next_card_value)
-
-            is_computer_passed = False
-            # text.append(print_status(False, computer_name, computer_hidden_card_value, computer_visible_card_total_values,
-            #                 [*computer_hidden_card_value, *computer_visible_card_total_values]))
-
-        # if the computer passes
-        else:
-            is_computer_passed = True
+        computer_turn()
+        
             # text.append(f"{computer_name} passed")
 
     return cards
 
-    #     #determine if the game is over
-    #     over_or_not = is_game_over(is_user_passed, is_computer_passed)
 
-    # #print game over message and determine winner
-    # print("----The Game is Over!----")
-    # print_winner(username, int(user_hidden_card_value + user_visible_card_total_values), computer_name,
-    #              int(computer_visible_card_total_values + computer_hidden_card_value))
+def player_passes():
+
+    global is_computer_passed
+
+    #determine if the game is over
+    while  is_computer_passed == False:
+        computer_turn()
+
+    winner_text = print_winner(username, [*user_hidden_card_value, *user_visible_card_total_values], computer_name,
+                [*computer_visible_card_total_values, *computer_hidden_card_value])
+
+    response = {'cards': cards, 'winner_text': winner_text}
+
+    return response
 
     # #ask if the user wants to play again
     # wants_to_play_again = ask_yes_or_no("Play again? (y/n)")
