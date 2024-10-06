@@ -67,7 +67,7 @@ CSRF_TRUSTED_ORIGINS = [
     'simple21-server.onrender.com'
 ]
 
-ALLOWED_HOSTS = ['simple21-server.onrender.com']
+ALLOWED_HOSTS = ['simple21-server.onrender.com', 'localhost']
 
 CORS_ALLOW_CREDENTIALS = True
 

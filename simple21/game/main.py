@@ -23,15 +23,13 @@ is_computer_passed = False
 cards = {}
 
 
+print
+
+
 @ensure_csrf_cookie
 def hello_world(request):
-    body = json.loads(request.body)
-    if request.method == 'POST':
-        return JsonResponse({'method': 'post', 'body': body})
-    elif request.method == 'GET':
-        return JsonResponse({'method': 'get'})
-    else:
-        return JsonResponse({'method': request.method})
+
+    return HttpResponse("Hello World!")
 
 def print_instructions():
     """
