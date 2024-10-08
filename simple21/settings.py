@@ -69,6 +69,15 @@ CSRF_TRUSTED_ORIGINS = [
 
 ALLOWED_HOSTS = ['simple21-server.onrender.com', 'localhost']
 
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+
 CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'simple21.urls'
