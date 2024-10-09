@@ -53,12 +53,17 @@ class Game:
         for card in stack:
             if isinstance(card['card_value'], int):
                 score += card['card_value']
+            elif card['card_value'] == 'A':
+                score += 11
+                num_of_As += 1
             else:
                 score += 10
-            if card['card_value'] == 'A':
-                num_of_As += 1
+            
         if score > 21:
-            score -= num_of_As * 9
+            for i in range(0, num_of_As):
+                score -= 10
+                if score <= 21:
+                    break
 
         print("score", score)
         return score
