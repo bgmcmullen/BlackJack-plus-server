@@ -184,28 +184,33 @@ class Game:
 
         text = [f"{username}, has {user_score} and {computer_name} has {computer_score}"]
 
+        winner = ''
 
             #If the user has more points(not over 21)
         if(user_score  > computer_score and user_score  <= 21):
             text.append(f"{username} won by {int(user_score - computer_score)}")
+            winner = 'user'
 
             #If the computer has more points(not over 21)
         elif(computer_score > user_score  and computer_score <= 21):
             text.append(f"{computer_name} won by {int(computer_score - user_score)}")
+            winner = 'computer'
 
             #If the computer overshot 21)
         elif(computer_score > 21 and user_score <= 21):
             text.append(f"{username} won, {computer_name} went bust")
+            winner = 'user'
 
             #If the user overshot 21)
         elif(user_score  > 21 and computer_score <= 21):
             text.append(f"{computer_name} won {username} went bust")
+            winner = 'computer'
 
             #If the computer and user have the same number of point or both overshot 21
         else:
             text.append("It's a tie")
-        return text
-
+            winner = 'tie'
+        return { 'winner_text': text, 'winner': winner }
 
     def run(self):
         """
@@ -339,56 +344,15 @@ class Game:
         while  self.is_computer_passed == False:
             self.computer_turn()
 
-        winner_text = self.print_winner(username, self.user_hidden_card_value + self.user_visible_card_total_values, self.computer_name,
+        winner_dict= self.print_winner(username, self.user_hidden_card_value + self.user_visible_card_total_values, self.computer_name,
                     self.computer_visible_card_total_values + self.computer_hidden_card_value)
 
-        response = {'cards': self.cards, 'winner_text': winner_text}
-
-        print(self.cards)
+        response = {'cards': self.cards, 'winner_dict': winner_dict}
 
         return response
-
-        # #ask if the user wants to play again
-        # wants_to_play_again = ask_yes_or_no("Play again? (y/n)")
-        # if(wants_to_play_again == True):
-
-        #     #If the player wants to play again ask if they want to change the user name
-        #     changes_name = ask_yes_or_no("Change name? (y/n)")
-        #     if(changes_name == True):
-        #         username = input("New name?\r\n")
-
-        #     #run the game again!
-        #     run(username, computer_name)
-
 
     def set_user_name(self, name):
         global username
         username = name
         response = "Welcome " + username + "!"
         return response
-
-# def main():
-#     """
-#     Main Function.
-#     """
-
-#     # print the game instructions
-#     game.print_instructions()
-
-#     # get and set user's name
-#     username = input("What's your name?\r\n")
-
-#     # set computer's name
-#     computer_name = "Computer"
-
-#     # insert the rest of the code in the main function here
-#     game.run(username, computer_name)
-
-#     #print ending message and exit program
-#     print("Have a nice day!")
-#     exit()
-
-
-
-# if __name__ == '__main__':
-#     main()
