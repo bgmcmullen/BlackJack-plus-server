@@ -59,6 +59,6 @@ class GameConsumer(WebsocketConsumer):
     reponse = self.game.player_passes()
     self.send_status(reponse['cards'])
     self.send(text_data=json.dumps({
-      'payload': reponse['winner_text'],
+      'payload': reponse['winner_dict'],
       'type': "game_end",
     }))
