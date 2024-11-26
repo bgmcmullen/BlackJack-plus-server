@@ -14,6 +14,35 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 import json
 
+import torch
+import random
+import numpy as np
+import torch.nn as nn
+
+class Simple21Net(nn.Module):
+    def __init__(self, input_size, action_size):
+        super(Simple21Net, self).__init__()
+        self.fc1 = nn.Linear(input_size, 64)
+        self.fc2 = nn.Linear(64, 32)
+        self.fc3 = nn.Linear(32, action_size)
+
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+
+
+# Load the trained model
+state_size = 5
+action_size = 2  
+model = Simple21Net(input_size=state_size, action_size=action_size)
+model.load_state_dict(torch.load("Simple21model_with_opponent_with_target.pth"))
+model.eval() 
+
+
+
 
 @ensure_csrf_cookie
 def hello_world(request):
@@ -39,6 +68,33 @@ class Game:
         self.target_score = 0
 
 
+        # Test the model on specific examples
+    def AI_take_another_card(self):
+
+
+        self.computer_total_points = self.calculate_score(self.computer_visible_card_total_values + self.computer_hidden_card_value, True)
+        self.user_visible_points = self.calculate_score(self.user_visible_card_total_values, True)
+
+        state = self.computer_total_points + self.user_visible_points + [self.target_score]
+
+        state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+
+        # Get the Q-values predicted by the model
+        with torch.no_grad():
+            q_values = model(state_tensor).squeeze().numpy()
+
+        # Choose the best action based on Q-values
+        best_action = np.argmax(q_values)
+
+
+        surety = float(abs(q_values[0] - q_values[1]))
+
+        if best_action == 1:
+            return [True, surety]
+        if best_action == 0:
+            return [False, surety]
+
+
     def print_instructions(self):
         """
         Prints out instructions for the game.
@@ -46,7 +102,7 @@ class Game:
         intructions = "Hello and welcome to Simple21!\r\nThe object of the game it to get as close to 21 as you can, but DON'T go over!"
         return intructions
 
-    def calculate_score(self, stack):
+    def calculate_score(self, stack, includeAs=False):
         score = 0
         num_of_As = 0
 
@@ -60,14 +116,16 @@ class Game:
             else:
                 score += 10
             
-        if score > 21:
+        if score > self.target_score:
             for i in range(0, num_of_As):
                 score -= 10
                 if score <= 21:
                     break
 
-        print("score", score)
-        return score
+        if includeAs == True:
+            return [score, num_of_As]
+        else:
+            return score
 
     def ask_yes_or_no(prompt):
         """
@@ -106,7 +164,6 @@ class Game:
 
         del self.card_deck[random_int]
 
-        #return the int btween 1 and 10
         return card
 
 
@@ -172,7 +229,8 @@ class Game:
 
 
     def set_target_score(self):
-        self.target_score = randint(19,27)
+        self.target_score = randint(21,27)
+        return self.target_score
         
 
     def print_winner(self, username, user_total_points, computer_name, computer_total_points):
@@ -255,8 +313,7 @@ class Game:
         self.user_hidden_card_value = []
         self.computer_visible_card_total_values = []
         self.computer_hidden_card_value = []
-        # set target score
-        self.target_score = randint(19,27)
+        self.cards['surety'] = 0
 
         #determine and print starting point values for user
         self.user_hidden_card_value = [self.next_card()]
@@ -295,7 +352,10 @@ class Game:
         # global user_visible_card_total_values
         # global is_computer_passed
 
-        computer_takes_card = self.take_another_card()
+        [computer_takes_card, surety] = self.AI_take_another_card()
+
+
+        # computer_takes_card = self.take_another_card()
 
         #if the computer takes a new card
         if(computer_takes_card == True):
@@ -311,6 +371,7 @@ class Game:
 
         else:
             self.is_computer_passed = True
+        return surety
 
         # if the computer passes
 
@@ -323,6 +384,8 @@ class Game:
         # global is_computer_passed
         # global cards
     
+
+        surety = 0
         next_card_value = self.next_card()
         # user_visible_card_total_values.append(next_card_value)
 
@@ -336,9 +399,11 @@ class Game:
 
         #if the computer has not yet passed determine if is takes a new card
         if(self.is_computer_passed == False):
-            self.computer_turn()
+            surety = self.computer_turn()
             
                 # text.append(f"{computer_name} passed")
+
+        self.cards['surety'] = surety
 
         return self.cards
 
@@ -349,11 +414,13 @@ class Game:
 
         #determine if the game is over
         while  self.is_computer_passed == False:
-            self.computer_turn()
+            surety = self.computer_turn()
 
         winner_dict= self.print_winner(username, self.user_hidden_card_value + self.user_visible_card_total_values, self.computer_name,
                     self.computer_visible_card_total_values + self.computer_hidden_card_value)
+        
 
+        self.cards['surety'] = surety
         response = {'cards': self.cards, 'winner_dict': winner_dict}
 
         return response
