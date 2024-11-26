@@ -36,6 +36,7 @@ class Game:
         self.user_hidden_card_value = []
         self.computer_visible_card_total_values = []
         self.computer_hidden_card_value = []
+        self.target_score = 0
 
 
     def print_instructions(self):
@@ -168,6 +169,10 @@ class Game:
     #         text = f"{name} has:\r\n   {visible_card}  visible point(s)"
 
     #     return text
+
+
+    def set_target_score(self):
+        self.target_score = randint(19,27)
         
 
     def print_winner(self, username, user_total_points, computer_name, computer_total_points):
@@ -186,23 +191,23 @@ class Game:
 
         winner = ''
 
-            #If the user has more points(not over 21)
-        if(user_score  > computer_score and user_score  <= 21):
+            #If the user has more points(not over target score)
+        if(user_score  > computer_score and user_score  <= self.target_score ):
             text.append(f"{username} won by {int(user_score - computer_score)}")
             winner = 'user'
 
-            #If the computer has more points(not over 21)
-        elif(computer_score > user_score  and computer_score <= 21):
+            #If the computer has more points(not over target score)
+        elif(computer_score > user_score  and computer_score <= self.target_score ):
             text.append(f"{computer_name} won by {int(computer_score - user_score)}")
             winner = 'computer'
 
-            #If the computer overshot 21)
-        elif(computer_score > 21 and user_score <= 21):
+            #If the computer overshot target score)
+        elif(computer_score > self.target_score  and user_score <= self.target_score ):
             text.append(f"{username} won, {computer_name} went bust")
             winner = 'user'
 
-            #If the user overshot 21)
-        elif(user_score  > 21 and computer_score <= 21):
+            #If the user overshot target score)
+        elif(user_score  > self.target_score  and computer_score <= self.target_score ):
             text.append(f"{computer_name} won {username} went bust")
             winner = 'computer'
 
@@ -250,6 +255,8 @@ class Game:
         self.user_hidden_card_value = []
         self.computer_visible_card_total_values = []
         self.computer_hidden_card_value = []
+        # set target score
+        self.target_score = randint(19,27)
 
         #determine and print starting point values for user
         self.user_hidden_card_value = [self.next_card()]
