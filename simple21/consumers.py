@@ -16,7 +16,7 @@ class GameConsumer(WebsocketConsumer):
     data = json.loads(text_data)
     type = data["type"]
     switch = {
-      "get_instructions": self.set_instructions,
+      "get_target_score": self.send_target_score,
       "set_name": self.handle_set_name,
       "run": self.handle_run,
       "take_a_card": self.take_a_card,
@@ -42,11 +42,11 @@ class GameConsumer(WebsocketConsumer):
       'type': "welcome_user",
     }))
 
-  def set_instructions(self, payload):
-    instructions = self.game.print_instructions()
+  def send_target_score(self, payload):
+    target_score = self.game.set_target_score()
     self.send(text_data=json.dumps({
-      'payload': instructions,
-      'type': "set_instructions",
+      'payload': target_score,
+      'type': "set_target_score",
     }))
 
   def send_status(self, text):

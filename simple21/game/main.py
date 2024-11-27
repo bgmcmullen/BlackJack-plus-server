@@ -14,6 +14,35 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 import json
 
+import torch
+import random
+import numpy as np
+import torch.nn as nn
+
+class Simple21Net(nn.Module):
+    def __init__(self, input_size, action_size):
+        super(Simple21Net, self).__init__()
+        self.fc1 = nn.Linear(input_size, 64)
+        self.fc2 = nn.Linear(64, 32)
+        self.fc3 = nn.Linear(32, action_size)
+
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+
+
+# Load the trained model
+state_size = 5
+action_size = 2  
+model = Simple21Net(input_size=state_size, action_size=action_size)
+model.load_state_dict(torch.load("Simple21model_with_opponent_with_target.pth"))
+model.eval() 
+
+
+
 
 @ensure_csrf_cookie
 def hello_world(request):
@@ -36,6 +65,34 @@ class Game:
         self.user_hidden_card_value = []
         self.computer_visible_card_total_values = []
         self.computer_hidden_card_value = []
+        self.target_score = 0
+
+
+        # Test the model on specific examples
+    def AI_take_another_card(self):
+
+
+        self.computer_total_points = self.calculate_score(self.computer_visible_card_total_values + self.computer_hidden_card_value, True)
+        self.user_visible_points = self.calculate_score(self.user_visible_card_total_values, True)
+
+        state = self.computer_total_points + self.user_visible_points + [self.target_score]
+
+        state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+
+        # Get the Q-values predicted by the model
+        with torch.no_grad():
+            q_values = model(state_tensor).squeeze().numpy()
+
+        # Choose the best action based on Q-values
+        best_action = np.argmax(q_values)
+
+
+        surety = float(abs(q_values[0] - q_values[1]))
+
+        if best_action == 1:
+            return [True, surety]
+        if best_action == 0:
+            return [False, surety]
 
 
     def print_instructions(self):
@@ -45,7 +102,7 @@ class Game:
         intructions = "Hello and welcome to Simple21!\r\nThe object of the game it to get as close to 21 as you can, but DON'T go over!"
         return intructions
 
-    def calculate_score(self, stack):
+    def calculate_score(self, stack, includeAs=False):
         score = 0
         num_of_As = 0
 
@@ -59,14 +116,16 @@ class Game:
             else:
                 score += 10
             
-        if score > 21:
+        if score > self.target_score:
             for i in range(0, num_of_As):
                 score -= 10
                 if score <= 21:
                     break
 
-        print("score", score)
-        return score
+        if includeAs == True:
+            return [score, num_of_As]
+        else:
+            return score
 
     def ask_yes_or_no(prompt):
         """
@@ -87,7 +146,7 @@ class Game:
             else:
                 continue
 
-    def next_card(self):
+    def next_card(self, surety=None):
         """
         Returns a random "card", represented by an int between 1 and 10, inclusive.
         The "cards" are the numbers 1 through 10 and they are randomly generated, not drawn from a deck of
@@ -105,7 +164,8 @@ class Game:
 
         del self.card_deck[random_int]
 
-        #return the int btween 1 and 10
+        card["surety"] = surety
+
         return card
 
 
@@ -168,6 +228,11 @@ class Game:
     #         text = f"{name} has:\r\n   {visible_card}  visible point(s)"
 
     #     return text
+
+
+    def set_target_score(self):
+        self.target_score = randint(21,27)
+        return self.target_score
         
 
     def print_winner(self, username, user_total_points, computer_name, computer_total_points):
@@ -186,23 +251,23 @@ class Game:
 
         winner = ''
 
-            #If the user has more points(not over 21)
-        if(user_score  > computer_score and user_score  <= 21):
+            #If the user has more points(not over target score)
+        if(user_score  > computer_score and user_score  <= self.target_score ):
             text.append(f"{username} won by {int(user_score - computer_score)}")
             winner = 'user'
 
-            #If the computer has more points(not over 21)
-        elif(computer_score > user_score  and computer_score <= 21):
+            #If the computer has more points(not over target score)
+        elif(computer_score > user_score  and computer_score <= self.target_score ):
             text.append(f"{computer_name} won by {int(computer_score - user_score)}")
             winner = 'computer'
 
-            #If the computer overshot 21)
-        elif(computer_score > 21 and user_score <= 21):
+            #If the computer overshot target score)
+        elif(computer_score > self.target_score  and user_score <= self.target_score ):
             text.append(f"{username} won, {computer_name} went bust")
             winner = 'user'
 
-            #If the user overshot 21)
-        elif(user_score  > 21 and computer_score <= 21):
+            #If the user overshot target score)
+        elif(user_score  > self.target_score  and computer_score <= self.target_score ):
             text.append(f"{computer_name} won {username} went bust")
             winner = 'computer'
 
@@ -288,11 +353,14 @@ class Game:
         # global user_visible_card_total_values
         # global is_computer_passed
 
-        computer_takes_card = self.take_another_card()
+        [computer_takes_card, surety] = self.AI_take_another_card()
+
+
+        # computer_takes_card = self.take_another_card()
 
         #if the computer takes a new card
         if(computer_takes_card == True):
-            next_card_value = self.next_card()
+            next_card_value = self.next_card(surety)
             # computer_visible_card_total_values.append(next_card_value)
             # text.append(f"{computer_name} gets {next_card_value}")
             if next_card_value != None:
@@ -346,6 +414,7 @@ class Game:
 
         winner_dict= self.print_winner(username, self.user_hidden_card_value + self.user_visible_card_total_values, self.computer_name,
                     self.computer_visible_card_total_values + self.computer_hidden_card_value)
+        
 
         response = {'cards': self.cards, 'winner_dict': winner_dict}
 
