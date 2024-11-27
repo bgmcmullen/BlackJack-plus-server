@@ -146,7 +146,7 @@ class Game:
             else:
                 continue
 
-    def next_card(self):
+    def next_card(self, surety=None):
         """
         Returns a random "card", represented by an int between 1 and 10, inclusive.
         The "cards" are the numbers 1 through 10 and they are randomly generated, not drawn from a deck of
@@ -163,6 +163,8 @@ class Game:
         card = self.card_deck[random_int]
 
         del self.card_deck[random_int]
+
+        card["surety"] = surety
 
         return card
 
@@ -313,7 +315,6 @@ class Game:
         self.user_hidden_card_value = []
         self.computer_visible_card_total_values = []
         self.computer_hidden_card_value = []
-        self.cards['surety'] = 0
 
         #determine and print starting point values for user
         self.user_hidden_card_value = [self.next_card()]
@@ -359,7 +360,7 @@ class Game:
 
         #if the computer takes a new card
         if(computer_takes_card == True):
-            next_card_value = self.next_card()
+            next_card_value = self.next_card(surety)
             # computer_visible_card_total_values.append(next_card_value)
             # text.append(f"{computer_name} gets {next_card_value}")
             if next_card_value != None:
@@ -371,7 +372,6 @@ class Game:
 
         else:
             self.is_computer_passed = True
-        return surety
 
         # if the computer passes
 
@@ -385,7 +385,6 @@ class Game:
         # global cards
     
 
-        surety = 0
         next_card_value = self.next_card()
         # user_visible_card_total_values.append(next_card_value)
 
@@ -399,11 +398,9 @@ class Game:
 
         #if the computer has not yet passed determine if is takes a new card
         if(self.is_computer_passed == False):
-            surety = self.computer_turn()
+            self.computer_turn()
             
                 # text.append(f"{computer_name} passed")
-
-        self.cards['surety'] = surety
 
         return self.cards
 
@@ -414,13 +411,12 @@ class Game:
 
         #determine if the game is over
         while  self.is_computer_passed == False:
-            surety = self.computer_turn()
+            self.computer_turn()
 
         winner_dict= self.print_winner(username, self.user_hidden_card_value + self.user_visible_card_total_values, self.computer_name,
                     self.computer_visible_card_total_values + self.computer_hidden_card_value)
         
 
-        self.cards['surety'] = surety
         response = {'cards': self.cards, 'winner_dict': winner_dict}
 
         return response
