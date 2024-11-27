@@ -20,7 +20,5 @@ from simple21.game.main import hello_world, print_instructions, set_user_name
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('test/', hello_world, name='hello_world'),
-    path('instructions/', print_instructions, name='instructions'),
-    path('set_user_name/', set_user_name, name='set_username')
+    path('', hello_world, name='hello_world')
 ]
