@@ -1,3 +1,7 @@
 .env
 /path
 venv/
+
+__pycache__/
+*.pyc
+*.pyo
