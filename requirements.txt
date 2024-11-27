@@ -26,3 +26,4 @@ zope.interface==7.0.3
 channels-redis==4.0.0
 python-dotenv==1.0.1
 torch==2.5.1
+numpy==2.1.3
