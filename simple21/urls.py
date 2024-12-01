@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from simple21.game.main import hello_world, print_instructions, set_user_name
+from simple21.game.main import hello_world
 
 urlpatterns = [
     path('admin/', admin.site.urls),
