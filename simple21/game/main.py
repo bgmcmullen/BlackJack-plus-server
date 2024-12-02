@@ -46,7 +46,6 @@ model.eval()
 
 @ensure_csrf_cookie
 def hello_world(request):
-
     return HttpResponse("Hello World!")
 
 

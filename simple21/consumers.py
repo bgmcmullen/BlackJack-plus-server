@@ -52,7 +52,7 @@ class GameConsumer(WebsocketConsumer):
   def send_status(self, text):
     self.send(text_data=json.dumps({
       'payload': text,
-      'type': "print_status",
+      'type': "set_card_status",
     }))
 
   def stand(self, playload):
